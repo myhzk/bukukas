@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BukuKas</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2310b981' /%3E%3Cstop offset='100%25' stop-color='%23fbbf24' /%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23grad)' d='M19 7h-1V6a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3zm-14-2h10a1 1 0 0 1 1 1v1H5a1 1 0 0 1-1-1v-1zm15 10h-3v-2h3v2zm-3-4a2 2 0 1 0 2 2 2 2 0 0 0-2-2z'/%3E%3C/svg%3E">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+    <div id="onboardingOverlay" class="glass-overlay" style="display: none;">
+        <div class="content-card text-center" style="max-width: 90%; width: 340px; border: 1px solid rgba(255,255,255,0.8);">
+            <i class='bx bxs-wallet' style="font-size: 56px; background: var(--gradient-main); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+            <h3 class="text-dark" style="margin-top: 10px;">Halo, Selamat Datang!</h3>
+            <p class="text-muted" style="margin-bottom: 20px;">Untuk pengalaman yang lebih baik, siapakah nama Anda?</p>
+            <input type="text" id="onboardNameInput" class="input-form" placeholder="Ketik nama panggilan Anda..." style="text-align: center; font-weight: bold; font-size: 1.1rem;">
+            <button class="btn-gradient" onclick="simpanNamaUser()">Mulai BukuKas</button>
+        </div>
+    </div>
+
+    <header class="app-header glass-header">
+        <div class="logo">
+            <svg width="28" height="28" viewBox="0 0 24 24"><defs><linearGradient id="gradLogo" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#10b981" /><stop offset="100%" stop-color="#fbbf24" /></linearGradient></defs><path fill="url(#gradLogo)" d="M19 7h-1V6a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3zm-14-2h10a1 1 0 0 1 1 1v1H5a1 1 0 0 1-1-1v-1zm15 10h-3v-2h3v2zm-3-4a2 2 0 1 0 2 2 2 2 0 0 0-2-2z"/></svg>
+            <h2>BukuKas</h2>
+        </div>
+        <div class="header-action">
+            <div class="sync-indicator"><span class="green-light"></span><span id="syncStatusText">SYNCED</span></div>
+            <span id="roleBadge" class="role-badge">Anggota</span>
+        </div>
+    </header>
+
+    <main id="app-container">
+        
+        <section id="page-home" class="page active">
+            <div class="welcome-text">
+                <p>Selamat datang,</p>
+                <h2 id="userNameDisplay">Anggota</h2>
+            </div>
+
+            <div class="promo-banner gradient-bg" onclick="navigate('page-pengumuman')">
+                <div class="promo-text">
+                    <span>Informasi Kas Terbaru</span>
+                    <small>Cek pembaruan iuran komunitas</small>
+                </div>
+                <div class="promo-icon"><i class='bx bx-chevron-right'></i></div>
+            </div>
+
+            <div class="menu-grid">
+                <div class="menu-item" onclick="navigate('page-saldo')"><div class="icon-box"><i class='bx bx-wallet'></i></div><span>Cek Saldo</span></div>
+                <div class="menu-item" onclick="navigate('page-mutasi')"><div class="icon-box"><i class='bx bx-transfer'></i></div><span>Mutasi</span></div>
+                <div class="menu-item" onclick="navigate('page-laporan')"><div class="icon-box"><i class='bx bx-file'></i></div><span>Laporan PDF</span></div>
+                <div class="menu-item" onclick="navigate('page-anggota')"><div class="icon-box"><i class='bx bx-group'></i></div><span>Anggota</span></div>
+                <div class="menu-item" onclick="navigate('page-pengumuman')"><div class="icon-box"><i class='bx bx-news'></i></div><span>Pengumuman</span></div>
+                <div class="menu-item" onclick="navigate('page-darurat')"><div class="icon-box"><i class='bx bx-plus-medical'></i></div><span>Dana Darurat</span></div>
+                <div class="menu-item" onclick="navigate('page-bukti')"><div class="icon-box"><i class='bx bx-receipt'></i></div><span>Bukti TF</span></div>
+                <div class="menu-item" onclick="navigate('page-kassaya')"><div class="icon-box"><i class='bx bx-user-check'></i></div><span>Kas Saya</span></div>
+            </div>
+        </section>
+
+        <section id="page-saldo" class="page">
+            <div class="page-header"><i class='bx bx-arrow-back' onclick="navigate('page-home')"></i><h3>Informasi Saldo</h3></div>
+            <div class="content-card text-center">
+                <p class="text-dark">Total Saldo Kas Saat Ini</p>
+                <h2 class="text-gradient" id="displaySaldo">Rp 0</h2>
+                <hr class="divider">
+                <p class="text-muted" id="lastUpdateText"><i class='bx bx-time-five'></i> Menghubungkan...</p>
+            </div>
+        </section>
+
+        <section id="page-bayar" class="page">
+            <div class="page-header"><h3 id="paymentPageTitle">Pembayaran Kas</h3></div>
+            <div id="view-user-payment">
+                <div class="content-card">
+                    <h4 class="text-dark" style="margin-top:0;">Daftar Rekening Bank</h4>
+                    <div class="bank-list">
+                        <div class="bank-item" onclick="copyRek('BCA', '1234567890')">
+                            <div><strong class="text-dark">BCA</strong><br><small>1234567890 a.n Kas Komunitas</small></div>
+                            <i class='bx bx-copy text-primary'></i>
+                        </div>
+                    </div>
+                    <p class="text-muted" style="margin-top: 15px; font-style: italic;"><i class='bx bx-info-circle'></i> Setelah transfer, mohon bagikan resi Anda ke grup WhatsApp atau ke Bendahara.</p>
+                </div>
+            </div>
+            <div id="view-admin-payment" style="display: none;">
+                <div class="content-card">
+                    <h4 class="text-primary" style="margin-top:0;"><i class='bx bx-plus-circle'></i> Input Transaksi</h4>
+                    <form id="formInputAdmin" onsubmit="submitTransaksiAdmin(event)">
+                        <input type="text" id="adminNama" placeholder="Nama Anggota / Keterangan Keperluan" required class="input-form">
+                        <input type="number" id="adminNominal" placeholder="Nominal Angka (Contoh: 50000)" required class="input-form">
+                        <label class="text-dark fw-bold" style="font-size:0.85rem; display:block; margin-bottom:5px;">Tipe Transaksi</label>
+                        <select id="adminTipe" class="input-form">
+                            <option value="Masuk">Uang Masuk / Iuran</option>
+                            <option value="Keluar">Uang Keluar / Keperluan Kas</option>
+                        </select>
+                        <button type="submit" class="btn-gradient" id="btnAdminSubmit"><i class='bx bx-save'></i> Simpan ke Cloud</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-mutasi" class="page">
+            <div class="page-header"><i class='bx bx-arrow-back' onclick="navigate('page-home')"></i><h3>Mutasi Transaksi</h3></div>
+            <div class="search-filter-wrapper content-card">
+                <div class="search-box">
+                    <i class='bx bx-search'></i>
+                    <input type="text" id="mutasiSearch" placeholder="Cari keterangan / nama..." onkeyup="filterMutasi()">
+                </div>
+                <div class="filter-bar">
+                    <select class="input-form filter-select" id="filterTipe" onchange="filterMutasi()">
+                        <option value="semua">Semua Tipe</option>
+                        <option value="masuk">Uang Masuk</option>
+                        <option value="keluar">Uang Keluar</option>
+                    </select>
+                </div>
+            </div>
+            <div class="content-card list-container" id="mutasiListContainer"><p class="text-muted text-center">Memuat riwayat...</p></div>
+        </section>
+
+        <section id="page-kassaya" class="page">
+            <div class="page-header"><i class='bx bx-arrow-back' onclick="navigate('page-home')"></i><h3>Status Iuran Mandiri</h3></div>
+            <div class="content-card">
+                <h4 class="text-dark" style="margin-top:0;">Pencarian Data Iuran</h4>
+                <div class="search-box">
+                    <i class='bx bx-user'></i>
+                    <input type="text" id="inputNamaKasSaya" placeholder="Masukkan Nama Lengkap Anda...">
+                </div>
+                <button class="btn-gradient" onclick="prosesCekKasSaya()">Periksa Riwayat Saya</button>
+            </div>
+            <div id="hasilKasSayaContainer" style="margin-top: 15px;"></div>
+        </section>
+
+        <section id="page-laporan" class="page">
+            <div class="page-header"><i class='bx bx-arrow-back' onclick="navigate('page-home')"></i><h3>Laporan Kas</h3></div>
+            <div class="content-card text-center">
+                <p class="text-dark" style="margin-top:0;">Cetak laporan rekapitulasi mutasi kas secara otomatis.</p>
+                <button class="btn-outline-dark" style="width:100%;" onclick="generateLaporanPDFKustom()"><i class='bx bx-printer'></i> Generate Laporan PDF</button>
+            </div>
+            <div style="display: none;">
+                <div id="template-pdf-print" style="padding: 30px; font-family: 'Plus Jakarta Sans', sans-serif; color: #111827;">
+                    <div style="text-align: center; border-bottom: 3px double #111827; padding-bottom: 10px; margin-bottom: 20px;">
+                        <h2 style="margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Laporan Keuangan Kas</h2>
+                    </div>
+                    <p><strong>Tanggal Cetak:</strong> <span id="pdfTanggalCetak"></span></p>
+                    <p><strong>Total Saldo:</strong> <span id="pdfTotalSaldo"></span></p>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem;">
+                        <tr style="background-color: #f3f4f6; border-top: 1px solid #111827; border-bottom: 1px solid #111827;">
+                            <th style="padding: 10px; text-align: left;">ID Transaksi</th><th style="padding: 10px; text-align: left;">Tanggal</th><th style="padding: 10px; text-align: left;">Nama/Ket</th><th style="padding: 10px; text-align: left;">Tipe</th><th style="padding: 10px; text-align: right;">Nominal</th>
+                        </tr>
+                        <tbody id="pdfTbodyMutasi"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-setting" class="page">
+            <div class="page-header"><h3>Setting & Hak Akses</h3></div>
+            <div class="content-card" id="adminAuthBox">
+                <h4 class="text-dark" style="margin-top:0;" id="authBoxTitle">Akses Administrator</h4>
+                <div id="loginFormSection">
+                    <input type="password" id="adminPasswordInput" placeholder="PIN / Password Pengurus" class="input-form">
+                    <button class="btn-gradient" onclick="prosesLoginAdmin()">Login Admin</button>
+                </div>
+                <div id="logoutFormSection" style="display: none;">
+                    <p class="text-muted">Status: **Admin/Pengurus**.</p>
+                    <button class="btn-outline-dark" style="width:100%; border-color:#dc2626; color:#dc2626;" onclick="prosesLogoutAdmin()">Keluar Mode Admin</button>
+                </div>
+            </div>
+            <div class="content-card text-center">
+                <p class="text-muted text-sm">Ganti Perangkat / Ganti Nama?</p>
+                <button class="btn-outline-dark" style="width: 100%;" onclick="resetNamaUser()">Ubah Identitas Nama</button>
+            </div>
+            <div class="content-card">
+                <div class="list-item"><div class="item-info"><strong class="text-dark">Mode Gelap</strong></div>
+                    <label class="switch"><input type="checkbox" id="themeSwitch" onchange="toggleTheme()"><span class="slider round"></span></label>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-anggota" class="page"><div class="page-header"><i class='bx bx-arrow-back' onclick="navigate('page-home')"></i><h3>Daftar Anggota</h3></div><div class="content-card text-dark">Data Anggota disinkronisasi melalui Supabase.</div></section>
+        <section id="page-pengumuman" class="page"><div class="page-header"><i class='bx bx-arrow-back' onclick="navigate('page-home')"></i><h3>Informasi</h3></div><div class="content-card text-dark">Pengumuman internal terhubung database cloud.</div></section>
+        <section id="page-darurat" class="page"><div class="page-header"><i class='bx bx-arrow-back' onclick="navigate('page-home')"></i><h3>Alokasi Darurat</h3></div><div class="content-card text-center"><p class="text-dark">Jatah Maksimal (50%)</p><h2 class="text-gradient" id="displayDarurat">Rp 0</h2></div></section>
+        <section id="page-bukti" class="page"><div class="page-header"><i class='bx bx-arrow-back' onclick="navigate('page-home')"></i><h3>Bukti TF</h3></div><div class="content-card text-dark">Arsip visual.</div></section>
+
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active" onclick="navigate('page-home', this)"><i class='bx bx-home-alt'></i><span>Home</span></a>
+        <div class="nav-item center-btn-wrapper" onclick="navigate('page-bayar', this)"><div class="center-btn gradient-bg"><i class='bx bx-qr-scan'></i></div><span class="center-btn-text">Bayar</span></div>
+        <a href="#" class="nav-item" onclick="navigate('page-setting', this)"><i class='bx bx-cog'></i><span>Setting</span></a>
+    </nav>
+
+    <script src="script.js"></script>
+</body>
+</html>
