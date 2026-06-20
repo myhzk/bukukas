@@ -1,14 +1,14 @@
-// KREDENSIAL SUPABASE ANDA
-const SUPABASE_URL = "https://varlrlqdfeqwgzgqaogx.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhcmxybHFkZmVxd2d6Z3Fhb2d4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NzAzMTQsImV4cCI6MjA5NzQ0NjMxNH0.FWbHy649zMetdkz22WiYAGoCuYozYdTW9m8UR_ldVKo";
-const ADMIN_PASSWORD_SECRET = "010314"; 
+// ====== KEMBALI KE GOOGLE SHEETS ======
+// Nanti, masukkan URL Web App Google Script Anda di bawah ini
+const GOOGLE_SCRIPT_URL = "URL_WEB_APP_GOOGLE_SCRIPT_ANDA_DISINI";
 
+const ADMIN_PASSWORD_SECRET = "admin123"; 
 let globalMutasiCache = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     checkUserOnboarding();
     periksaStatusRoleAuth();
-    loadDataDariSupabase(); // Load awal
+    loadDataDariSheets(); 
     
     if (localStorage.getItem('theme') === 'dark') {
         document.body.classList.add('dark-mode');
@@ -39,39 +39,37 @@ function terapkanNamaUser(name) {
     if(document.getElementById('inputNamaKasSaya')) document.getElementById('inputNamaKasSaya').value = name;
 }
 window.resetNamaUser = function() {
-    if(confirm("Ganti identitas perangkat ini?")) {
+    if(confirm("Ganti identitas nama perangkat ini?")) {
         localStorage.removeItem('bukukas_user_name');
         location.reload();
     }
 }
 
-// 2. FETCH DATA SUPABASE DENGAN CACHE BYPASS (FIX BUG TRANSAKSI TIDAK UPDATE)
-function loadDataDariSupabase() {
+// 2. FETCH DATA DARI GOOGLE SHEETS DENGAN BYPASS CACHE
+function loadDataDariSheets() {
     const syncText = document.getElementById('syncStatusText');
     const greenLight = document.querySelector('.green-light');
     if(syncText) syncText.innerText = "SYNCING...";
 
-    // Menggunakan parameter penangkal cache (?t=...) agar selalu menarik data terbaru
-    fetch(`${SUPABASE_URL}/rest/v1/mutasi?select=*&order=id_transaksi.desc&t=${new Date().getTime()}`, {
-        method: 'GET',
-        headers: { 
-            'apikey': SUPABASE_ANON_KEY, 
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Cache-Control': 'no-cache'
-        }
-    })
-    .then(res => { if (!res.ok) throw new Error("Koneksi gagal"); return res.json(); })
+    // Tambahkan parameter ?t= agar browser tidak mengambil data lama dari cache
+    const cacheBypassUrl = GOOGLE_SCRIPT_URL.includes('?') ? 
+        `${GOOGLE_SCRIPT_URL}&t=${new Date().getTime()}` : 
+        `${GOOGLE_SCRIPT_URL}?t=${new Date().getTime()}`;
+
+    fetch(cacheBypassUrl)
+    .then(res => res.json())
     .then(data => {
-        globalMutasiCache = data;
-        let totalSaldo = 0;
+        // Kita asumsikan Google Sheets mereturn { total_saldo: 150000, mutasi: [...] }
+        globalMutasiCache = data.mutasi || [];
+        let totalSaldo = data.total_saldo || 0;
+        
         let mutasiHtml = '';
         let tabPembayaranHtml = '';
         let countPembayaran = 0;
 
-        data.forEach(item => {
+        globalMutasiCache.forEach(item => {
             let nominal = parseFloat(item.nominal) || 0;
             let isMasuk = item.tipe_transaksi.toLowerCase() === 'masuk';
-            totalSaldo += isMasuk ? nominal : -nominal;
             let statusClass = isMasuk ? 'text-success' : 'text-danger';
             let sign = isMasuk ? '+' : '-';
 
@@ -84,7 +82,6 @@ function loadDataDariSupabase() {
                     <span class="${statusClass}">${sign} Rp ${nominal.toLocaleString('id-ID')}</span>
                 </div>`;
 
-            // Ekstrak 3 Transaksi Masuk Terbaru untuk Tab Pembayaran
             if(isMasuk && countPembayaran < 3) {
                 tabPembayaranHtml += `
                 <div class="list-item" style="border-bottom:1px dashed var(--border-color); padding: 8px 0;">
@@ -95,8 +92,8 @@ function loadDataDariSupabase() {
             }
         });
 
-        document.getElementById('displaySaldo').innerText = `Rp ${totalSaldo.toLocaleString('id-ID')}`;
-        document.getElementById('displayDarurat').innerText = `Rp ${(totalSaldo * 0.5).toLocaleString('id-ID')}`;
+        document.getElementById('displaySaldo').innerText = `Rp ${parseInt(totalSaldo).toLocaleString('id-ID')}`;
+        document.getElementById('displayDarurat').innerText = `Rp ${parseInt(totalSaldo * 0.5).toLocaleString('id-ID')}`;
         document.getElementById('mutasiListContainer').innerHTML = mutasiHtml || '<p class="text-muted text-center">Belum ada transaksi.</p>';
         document.getElementById('pembayaranTerbaruList').innerHTML = tabPembayaranHtml || '<p class="text-muted text-center">Belum ada data masuk.</p>';
         document.getElementById('lastUpdateText').innerHTML = `<i class='bx bx-time-five'></i> Sinkron: ${new Date().toLocaleTimeString('id-ID')} WIB`;
@@ -106,12 +103,19 @@ function loadDataDariSupabase() {
         if(localStorage.getItem('bukukas_user_name')) prosesCekKasSaya();
     })
     .catch(err => {
-        if(syncText) syncText.innerText = "OFFLINE";
-        if(greenLight) greenLight.style.backgroundColor = "#dc2626";
+        console.error("Gagal membaca Google Sheets", err);
+        // Tetap hijaukan lampu khusus saat mode dev jika Google Sheet URL kosong
+        if (GOOGLE_SCRIPT_URL.includes("URL_WEB_APP")) {
+            if(syncText) syncText.innerText = "DEMO (STANDBY)";
+            if(greenLight) greenLight.style.backgroundColor = "#fbbf24";
+        } else {
+            if(syncText) syncText.innerText = "OFFLINE";
+            if(greenLight) greenLight.style.backgroundColor = "#dc2626";
+        }
     });
 }
 
-// 3. INPUT TRANSAKSI POST (FIX BUG)
+// 3. INPUT TRANSAKSI KE GOOGLE SHEETS (MODE ADMIN)
 window.submitTransaksiAdmin = function(event) {
     event.preventDefault();
     const nama = document.getElementById('adminNama').value;
@@ -123,34 +127,35 @@ window.submitTransaksiAdmin = function(event) {
     btnSubmit.disabled = true;
 
     const payload = {
-        id_transaksi: "TX" + Math.floor(Math.random() * 900000 + 100000),
-        tanggal: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + " WIB",
-        keterangan_transaksi: tipe === 'Masuk' ? `Iuran Kas (Cash)` : `Pengeluaran: ${nama}`,
+        keterangan: tipe === 'Masuk' ? `Iuran Kas (Cash)` : `Pengeluaran: ${nama}`,
         nominal: parseInt(nominal),
-        tipe_transaksi: tipe,
-        nama_user: tipe === 'Masuk' ? nama : 'Admin'
+        tipe: tipe,
+        user: tipe === 'Masuk' ? nama : 'Admin'
     };
 
-    fetch(`${SUPABASE_URL}/rest/v1/mutasi`, {
+    // Google Sheets menggunakan POST no-cors agar tidak terblokir
+    fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' },
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     })
-    .then(res => {
-        if(!res.ok) throw new Error("Gagal POST ke Database");
-        alert("Transaksi Sukses Tersimpan!");
+    .then(() => {
+        alert("Transaksi Sukses Dikirim ke Google Sheets!");
         document.getElementById('formInputAdmin').reset();
-        loadDataDariSupabase(); // Segera tarik data ulang
+        
+        // Refresh data setelah delay singkat agar Apps Script selesai menulis
+        setTimeout(loadDataDariSheets, 1500); 
         navigate('page-home');
     })
-    .catch(err => { alert("Gagal menyimpan data."); console.error(err); })
+    .catch(err => { alert("Gagal menyimpan data."); })
     .finally(() => {
-        btnSubmit.innerHTML = "<i class='bx bx-save'></i> Simpan Data";
+        btnSubmit.innerHTML = "<i class='bx bx-save'></i> Simpan ke Google Sheets";
         btnSubmit.disabled = false;
     });
 }
 
-// 4. ROLE & GRID SWITCHING
+// 4. PENGATURAN MODE ADMIN & NAVIGASI BAWAH
 window.prosesLoginAdmin = function() {
     if (document.getElementById('adminPasswordInput').value === ADMIN_PASSWORD_SECRET) {
         localStorage.setItem('bukukas_user_role', 'admin');
@@ -170,16 +175,16 @@ function periksaStatusRoleAuth() {
     const isAdmin = localStorage.getItem('bukukas_user_role') === 'admin';
     const roleBadge = document.getElementById('roleBadge');
     
-    // Togle View Pembayaran
+    // Tampilan Pembayaran & Form
     document.getElementById('view-user-payment').style.display = isAdmin ? "none" : "block";
     document.getElementById('view-admin-payment').style.display = isAdmin ? "block" : "none";
     document.getElementById('paymentPageTitle').innerText = isAdmin ? "Input Kas" : "Pembayaran Kas";
     
-    // Toggle View Anggota (Tombol Input)
+    // Tombol Tambah Anggota Khusus Admin
     const viewAdminAnggota = document.getElementById('view-admin-anggota');
     if(viewAdminAnggota) viewAdminAnggota.style.display = isAdmin ? "block" : "none";
 
-    // Toggle View Setting
+    // Panel Login/Logout
     document.getElementById('loginFormSection').style.display = isAdmin ? "none" : "block";
     document.getElementById('logoutFormSection').style.display = isAdmin ? "block" : "none";
     document.getElementById('authBoxTitle').innerText = isAdmin ? "Status Terautentikasi" : "Otentikasi Pengurus";
@@ -188,21 +193,18 @@ function periksaStatusRoleAuth() {
     document.getElementById('grid-user').style.display = isAdmin ? "none" : "grid";
     document.getElementById('grid-admin').style.display = isAdmin ? "grid" : "none";
 
+    // Sembunyikan Navigasi Bawah Khusus Admin
+    const bottomNav = document.querySelector('.bottom-nav');
+    if(bottomNav) bottomNav.style.display = isAdmin ? 'none' : 'flex';
+    document.body.style.paddingBottom = isAdmin ? '20px' : '90px';
+
     if(roleBadge) {
         roleBadge.innerText = isAdmin ? "Admin" : "Anggota";
         isAdmin ? roleBadge.classList.add('admin-mode') : roleBadge.classList.remove('admin-mode');
     }
 }
 
-// 5. PUSAT INFORMASI TABS
-window.switchTab = function(tabId, btnElement) {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    btnElement.classList.add('active');
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
-}
-
-// 6. SISANYA (KAS SAYA, PDF, UTILS)
+// 5. KAS SAYA
 window.prosesCekKasSaya = function() {
     const namaCari = document.getElementById('inputNamaKasSaya').value.trim().toLowerCase();
     const container = document.getElementById('hasilKasSayaContainer');
@@ -222,6 +224,7 @@ window.prosesCekKasSaya = function() {
     container.innerHTML = `<div class="content-card"><h4 class="text-primary" style="margin-top:0;"><i class='bx bx-id-card'></i> Rangkuman Iuran Anda</h4><p class="text-dark" style="margin-bottom: 5px;">Total Dana Disetorkan:</p><h2 class="text-gradient" style="margin: 0 0 15px 0;">Rp ${totalIuran.toLocaleString('id-ID')}</h2><hr class="divider"><h5 class="text-dark" style="margin-bottom:10px;">Rincian Setoran:</h5>${rincianHtml}</div>`;
 }
 
+// 6. GENERATE PDF
 window.generateLaporanPDFKustom = function() {
     const tbody = document.getElementById('pdfTbodyMutasi');
     let rowsHtml = ''; let totalSaldo = 0;
@@ -236,10 +239,17 @@ window.generateLaporanPDFKustom = function() {
     html2pdf().set({ margin: 10, filename: `Laporan_BukuKas.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(document.getElementById('template-pdf-print')).toPdf().output('bloburl').then((url) => { window.open(url, '_blank'); });
 }
 
+// 7. UTILITIES
 window.navigate = function(id, el = null) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     if (el) { document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); el.classList.add('active'); }
+}
+window.switchTab = function(tabId, btnElement) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    btnElement.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
 }
 window.filterMutasi = function() {
     const q = document.getElementById('mutasiSearch').value.toLowerCase();
